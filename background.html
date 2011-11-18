@@ -1,24 +1,20 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
 <script type="text/javascript">
 
-var successURL = 'http://www.facebook.com/connect/login_success.html';
+var successURL0 = 'http://www.facebook.com/connect/login_success.html';
+var successURL1 = 'https://www.facebook.com/connect/login_success.html';
  
 function onFacebookLogin() {
-	console.log("on login");
-	if (localStorage.accessToken) {
-		console.log("access token yes");
-		chrome.tabs.getAllInWindow(null, function(tabs) {
-			for (var i = 0; i < tabs.length; i++) {
-				if (tabs[i].url.indexOf(successURL) == 0) {
-					var params = tabs[i].url.split('#')[1];
-					console.log(params);
-					localStorage.accessToken = params;
-					chrome.tabs.onUpdated.removeListener(onFacebookLogin);
-					return;
-				}
+	chrome.tabs.getAllInWindow(null, function(tabs) {
+		for (var i = 0; i < tabs.length; i++) {
+			if (tabs[i].url.indexOf(successURL0) == 0 || tabs[i].url.indexOf(successURL1) == 0) {
+				var params = tabs[i].url.split('#')[1];
+				localStorage.accessToken = params;
+				chrome.tabs.onUpdated.removeListener(onFacebookLogin);
+				return;
 			}
-		});
-	}
+		}
+	});
 }
 chrome.tabs.onUpdated.addListener(onFacebookLogin);
 

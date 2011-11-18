@@ -4,21 +4,22 @@
 	<script type="text/javascript" src="js/date.js"></script>
 
 	<script type="text/javascript">
-	
-	if (localStorage.accessToken) {
-		var graphUrl = "https://graph.facebook.com/me?" + localStorage.accessToken + "&callback=displayUser";
-		console.log(graphUrl);
 
-		var script = document.createElement("script");
-		script.src = graphUrl;
-		document.body.appendChild(script);
-
-		function displayUser(user) {
-			console.log(user);
+	$(document).ready(function() {
+		
+		var userId;
+		
+		function checkFacebookLogin() {
+			if (localStorage.accessToken) {
+				var graphUrl = "https://graph.facebook.com/me?" + localStorage.accessToken;
+				
+				$.getJSON(graphUrl, function(data) {
+					userId = data.id;
+					$('#user').html('Hello, ' + data.first_name);
+					$('#login').hide();
+				});
+			}
 		}
-	}
-
-	$(document).ready(function(){
 	
 		function getTimeStr(time) {
 			var now = new Date(),
@@ -50,6 +51,8 @@
 			
 			return timeStr;
 		}
+		
+		checkFacebookLogin();
 
 		var templateHtml = $('#song_template').html();
 		var template = Handlebars.compile(templateHtml);
@@ -58,9 +61,24 @@
 			for(i = 0; i < data.length; i++) {
 				var song = data[i];				
 				song.timeStr = getTimeStr(new Date(song.time));
-				
+
 				var html = template(song);			
 				$('#content').append(html);
+				
+				$('.plus a').click(function() {
+					var id = $(this).attr('id');
+					
+					$.post('http://trackservice.herokuapp.com/api/likes/' + id, { user: userId }, function(data) {
+						$('#status').html("song liked");
+						$('#status').fadeIn();
+						
+						setTimeout(function() {
+							$('#status').fadeOut();
+						}, 1000);
+				    });
+	
+					return false;
+				});
 			}
 		});
 		
@@ -81,14 +99,18 @@
 		text-align: center;
 		background-color: #333;
 		color: white;
+		width: 440px;
+		height: 350px;
 	}
 	
 	a {
 		color: #ffbc00;
+		text-decoration: none;
 	}
 
 	#content {
 		width: 400px;
+		height: 270px;
 	}
 
 	tr {
@@ -102,29 +124,80 @@
 	.time {
 		width: 80px;
 		text-align: right;
-		padding-right: 10px;
+		
 	}
 	
-	.artist {
+	.plus {
+		width: 20px;
+		text-align: center;
+	}
+	
+	.plus a {
+		color: #333;
+		font-weight: bold;
+	}
+
+	.time-content {
+		font-weight: bold;
+		background-color: #444;
+		color: #ddd;
+		border: #444 solid 4px;
+	}
+	
+	.plus-content {
+		background-color: #fd0;
+		border: #fd0 solid 4px;
+	}
+	
+	.plus-content:hover {
+		background-color: #ddd;
+		border: #ddd solid 4px;
+	}
+	
+	.song-content {
+		background-color: white;
+		color: black;
+		border: white solid 4px;
+	}
+	
+	.spotify {
+		background-color: #fd0;
+		border: #fd0 solid 4px;
+	}
+	
+	.spotify a {
+		color: #333;
 		font-weight: bold;
 	}
 	
-	.title {
-		font-weight: bold;
+	.spotify:hover {
+		background-color: #ddd;
+		border: #ddd solid 4px;
+	}
+	
+	#user {
+		margin-bottom: 10px;
 	}
 	
 	#footer {
+		margin-top: 10px;
+	}
+	
+	#status {
+		display: hidden;
 		margin-top: 10px;
 	}
 
 	</style>
 </head>
 <body>
-	<p><a target="_blank" href="https://www.facebook.com/dialog/oauth?client_id=252955554753527&response_type=token&redirect_uri=http://www.facebook.com/connect/login_success.html">Facebook Connect</a></p>
+	<div id="login"><a target="_blank" href="https://www.facebook.com/dialog/oauth?client_id=252955554753527&response_type=token&redirect_uri=http://www.facebook.com/connect/login_success.html">login</a></div>
 
 	<div id="user">not logged in</div>
 	
 	<table id='content'></table>
+	
+	<div id='status'></div>
 	
 	<div id='footer'>
 		<span><a href="http://trackservice.heroku.com" target="_blank">visit website</a></span> | 
@@ -135,10 +208,10 @@
 
 	<script type="text/template" id="song_template">	
 		<tr>
-			<td class="time">{{timeStr }}</td> 
+			<td class="time"><span class="time-content">{{timeStr }}</td> 
+			<td class="plus"><span class="plus-content"><a href="" id="{{ song_id }}">+</a></td>
 			<td class="song">
-				<span class="artist">{{ artist }}</span> - 
-				<span class="title">{{ title }}</span>
+				<span class="song-content">{{ artist }} - {{ title }}</span>
 				{{#if spotify}}<span class="spotify"><a href="{{ spotify }}" target="helper">play</a></span>{{/if}}
 			</td>
 		</tr> 	
