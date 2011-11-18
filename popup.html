@@ -1,0 +1,146 @@
+<head>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+	<script type="text/javascript" src="js/handlebars.1.0.0.beta.3.js"></script>
+	<script type="text/javascript" src="js/date.js"></script>
+
+	<script type="text/javascript">
+	
+	if (localStorage.accessToken) {
+		var graphUrl = "https://graph.facebook.com/me?" + localStorage.accessToken + "&callback=displayUser";
+		console.log(graphUrl);
+
+		var script = document.createElement("script");
+		script.src = graphUrl;
+		document.body.appendChild(script);
+
+		function displayUser(user) {
+			console.log(user);
+		}
+	}
+
+	$(document).ready(function(){
+	
+		function getTimeStr(time) {
+			var now = new Date(),
+				day = time.clone().clearTime(),
+				today = now.clone().clearTime(),
+				isToday = day.equals(Date.today()),
+				isYesterday = day.equals(Date.today().add(-1).day()),
+				timeDiff = now.getTime() - time.getTime(),
+				timeDiffInMinutes = timeDiff / 1000 / 60,
+				timeStr;
+			
+			if (timeDiffInMinutes < 2) {
+				timeStr = 'just now';
+			}	
+			else if (timeDiffInMinutes < 15) {
+				timeStr = Math.round(timeDiffInMinutes) + ' min ago';
+			}
+			else if (isToday) {
+				timeStr = time.toString('HH:mm');
+			}
+			else {
+				if(isYesterday) {
+					timeStr = 'yesterday';
+				}
+				else {
+					timeStr = time.toString('d. MM.');
+				}
+			}	
+			
+			return timeStr;
+		}
+
+		var templateHtml = $('#song_template').html();
+		var template = Handlebars.compile(templateHtml);
+		
+		$.getJSON('http://trackservice.herokuapp.com/api/plays?count=10', function(data) {	
+			for(i = 0; i < data.length; i++) {
+				var song = data[i];				
+				song.timeStr = getTimeStr(new Date(song.time));
+				
+				var html = template(song);			
+				$('#content').append(html);
+			}
+		});
+		
+		$('#fm4-stream').click(function() {
+			var href = $('#fm4-stream a').attr('href');
+			window.open(href, 'player', 'width=320,height=260');
+			return false;
+		});
+	});
+
+	</script>
+
+	<style>
+
+	body {
+		font-family: 'Helvetica Neue', Helvetica, Arial, serif;
+		font-size: 12px;
+		text-align: center;
+		background-color: #333;
+		color: white;
+	}
+	
+	a {
+		color: #ffbc00;
+	}
+
+	#content {
+		width: 400px;
+	}
+
+	tr {
+		margin-bottom: 5px;
+	}
+	
+	td {
+		font-size: 12px;
+	}
+	
+	.time {
+		width: 80px;
+		text-align: right;
+		padding-right: 10px;
+	}
+	
+	.artist {
+		font-weight: bold;
+	}
+	
+	.title {
+		font-weight: bold;
+	}
+	
+	#footer {
+		margin-top: 10px;
+	}
+
+	</style>
+</head>
+<body>
+	<p><a target="_blank" href="https://www.facebook.com/dialog/oauth?client_id=252955554753527&response_type=token&redirect_uri=http://www.facebook.com/connect/login_success.html">Facebook Connect</a></p>
+
+	<div id="user">not logged in</div>
+	
+	<table id='content'></table>
+	
+	<div id='footer'>
+		<span><a href="http://trackservice.heroku.com" target="_blank">visit website</a></span> | 
+		<span id="fm4-stream"><a href="http://fm4.orf.at/v2static/html/streaming/index.html">fm4 stream</a></span>
+	</div>
+	
+	<iframe name="helper" style="display:none;"></iframe>
+
+	<script type="text/template" id="song_template">	
+		<tr>
+			<td class="time">{{timeStr }}</td> 
+			<td class="song">
+				<span class="artist">{{ artist }}</span> - 
+				<span class="title">{{ title }}</span>
+				{{#if spotify}}<span class="spotify"><a href="{{ spotify }}" target="helper">play</a></span>{{/if}}
+			</td>
+		</tr> 	
+	</script>
+</body>

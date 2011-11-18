@@ -1,0 +1,69 @@
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+<script type="text/javascript">
+
+var successURL = 'http://www.facebook.com/connect/login_success.html';
+ 
+function onFacebookLogin() {
+	console.log("on login");
+	if (localStorage.accessToken) {
+		console.log("access token yes");
+		chrome.tabs.getAllInWindow(null, function(tabs) {
+			for (var i = 0; i < tabs.length; i++) {
+				if (tabs[i].url.indexOf(successURL) == 0) {
+					var params = tabs[i].url.split('#')[1];
+					console.log(params);
+					localStorage.accessToken = params;
+					chrome.tabs.onUpdated.removeListener(onFacebookLogin);
+					return;
+				}
+			}
+		});
+	}
+}
+chrome.tabs.onUpdated.addListener(onFacebookLogin);
+
+$(document).ready(function(){
+	var lastSong = null;
+
+	function checkNewSong() {
+		$.getJSON('http://trackservice.herokuapp.com/api/plays?count=1', function(data) {
+		
+			if (data.length > 0) {
+				var song = data[0];
+				
+				if (lastSong == null || song.song_id != lastSong.song_id) {
+					lastSong = song;
+					
+					// Create a simple text notification:
+					var notification = webkitNotifications.createNotification(
+					  'images/icon48.png',  // icon url - can be relative
+					  song.artist,  		// notification title
+					  song.title 	 		// notification body text
+					);
+					
+					notification.onclick = function() {
+						var win = window.open(song.spotify);
+						
+						setTimeout(function() {
+							win.close();
+						}, 500);
+						
+						notification.cancel();
+					};
+
+					notification.show();
+					
+					setTimeout(function() {
+						notification.cancel();
+					}, 10000);
+				}
+			}
+		});
+	}
+
+	checkNewSong();
+	setTimeout(checkNewSong, 10000);
+	
+});
+
+</script>
