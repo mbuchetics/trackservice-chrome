@@ -4,19 +4,28 @@
 var successURL0 = 'http://www.facebook.com/connect/login_success.html';
 var successURL1 = 'https://www.facebook.com/connect/login_success.html';
  
-function onFacebookLogin() {
+function onFacebookLogin(callback) {
 	chrome.tabs.getAllInWindow(null, function(tabs) {
 		for (var i = 0; i < tabs.length; i++) {
 			if (tabs[i].url.indexOf(successURL0) == 0 || tabs[i].url.indexOf(successURL1) == 0) {
-				var params = tabs[i].url.split('#')[1];
-				localStorage.accessToken = params;
+				var token = tabs[i].url.split('#')[1];	
+				localStorage.accessToken = token;
 				chrome.tabs.onUpdated.removeListener(onFacebookLogin);
+				
+				console.log('new token: ' + token);
+				callback(token);
+				
 				return;
 			}
 		}
 	});
 }
-chrome.tabs.onUpdated.addListener(onFacebookLogin);
+
+function watchFacebookLogin(callback) {
+	chrome.tabs.onUpdated.addListener(function() {
+		onFacebookLogin(callback);
+	});
+}
 
 $(document).ready(function(){
 	var lastSong = null;

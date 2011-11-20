@@ -9,9 +9,9 @@
 		
 		var userId;
 		
-		function checkFacebookLogin() {
-			if (localStorage.accessToken) {
-				var graphUrl = "https://graph.facebook.com/me?" + localStorage.accessToken;
+		function checkFacebookLogin(token) {
+			if (token) {
+				var graphUrl = "https://graph.facebook.com/me?" + token;
 				
 				$.getJSON(graphUrl, function(data) {
 					userId = data.id;
@@ -52,7 +52,7 @@
 			return timeStr;
 		}
 		
-		checkFacebookLogin();
+		checkFacebookLogin(localStorage.accessToken);
 
 		var templateHtml = $('#song_template').html();
 		var template = Handlebars.compile(templateHtml);
@@ -87,6 +87,10 @@
 			window.open(href, 'player', 'width=320,height=260');
 			return false;
 		});
+		
+		$('#login').click(function() {
+			chrome.extension.getBackgroundPage().watchFacebookLogin(checkFacebookLogin);
+		});
 	});
 
 	</script>
@@ -119,6 +123,7 @@
 	
 	td {
 		font-size: 12px;
+		white-space: nowrap;
 	}
 	
 	.time {
@@ -209,7 +214,7 @@
 	<script type="text/template" id="song_template">	
 		<tr>
 			<td class="time"><span class="time-content">{{timeStr }}</td> 
-			<td class="plus"><span class="plus-content"><a href="" id="{{ song_id }}">+</a></td>
+			<td class="plus"><span class="plus-content"><a href="" id="{{ song_id }}">add</a></td>
 			<td class="song">
 				<span class="song-content">{{ artist }} - {{ title }}</span>
 				{{#if spotify}}<span class="spotify"><a href="{{ spotify }}" target="helper">play</a></span>{{/if}}
