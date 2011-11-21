@@ -1,30 +1,36 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
 <script type="text/javascript">
 
-var successURL0 = 'http://www.facebook.com/connect/login_success.html';
-var successURL1 = 'https://www.facebook.com/connect/login_success.html';
+var successURL0 = 'http://www.facebook.com/connect/login_success.html',
+ 	successURL1 = 'https://www.facebook.com/connect/login_success.html',
+	tabUpdateListener;
  
-function onFacebookLogin(callback) {
-	chrome.tabs.getAllInWindow(null, function(tabs) {
-		for (var i = 0; i < tabs.length; i++) {
-			if (tabs[i].url.indexOf(successURL0) == 0 || tabs[i].url.indexOf(successURL1) == 0) {
-				var token = tabs[i].url.split('#')[1];	
-				localStorage.accessToken = token;
-				chrome.tabs.onUpdated.removeListener(onFacebookLogin);
-				
-				console.log('new token: ' + token);
-				callback(token);
-				
-				return;
-			}
+function onFacebookLogin(tabId, changeInfo, tab, callback) {
+	if (tab.url.indexOf(successURL0) == 0 || tab.url.indexOf(successURL1) == 0) {
+		var token = tab.url.split('#')[1];	
+		localStorage.accessToken = token;
+		
+		if (tabUpdateListener) {
+			chrome.tabs.onUpdated.removeListener(tabUpdateListener);
+			tabUdateListener = null;
 		}
-	});
+		
+		chrome.tabs.remove(tab.id);
+		
+		console.log('new token: ' + token);
+		callback(token);
+		
+		return;
+	}
 }
 
 function watchFacebookLogin(callback) {
-	chrome.tabs.onUpdated.addListener(function() {
-		onFacebookLogin(callback);
-	});
+	
+	tabUpdateListener = function(tabId, changeInfo, tab) {
+		onFacebookLogin(tabId, changeInfo, tab, callback);
+	};
+	
+	chrome.tabs.onUpdated.addListener(tabUpdateListener);
 }
 
 $(document).ready(function(){
