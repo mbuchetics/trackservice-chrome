@@ -33,6 +33,10 @@ function watchFacebookLogin(callback) {
 	chrome.tabs.onUpdated.addListener(tabUpdateListener);
 }
 
+function decodeHtmlString(htmlString) {
+	return $("<div/>").html(htmlString).text();
+}
+
 $(document).ready(function(){
 	var lastSong = null;
 
@@ -47,9 +51,9 @@ $(document).ready(function(){
 					
 					// Create a simple text notification:
 					var notification = webkitNotifications.createNotification(
-					  'images/icon48.png',  // icon url - can be relative
-					  song.artist,  		// notification title
-					  song.title 	 		// notification body text
+						'images/icon48.png',  			// icon url - can be relative
+						decodeHtmlString(song.artist),  	// notification title
+						decodeHtmlString(song.title)		// notification body text
 					);
 					
 					notification.onclick = function() {
